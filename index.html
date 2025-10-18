@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Breacker</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="title">Neon Breaker</h1>
+        
+        <div class="stats">
+            <div class="stat-item">
+                <span class="stat-label">Puntos:</span>
+                <span id="score-display">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Vidas:</span>
+                <span id="lives-display">3</span>
+            </div>
+        </div>
+        
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        
+        <!-- Menu inicio -->
+        <div class="menu-overlay" id="start-menu">
+            <div class="menu-content">
+                <h2 class="menu-title">NEON BREAKER</h2>
+                <p class="menu-text">Rompe todos los bloques para ganar</p>
+                <button class="btn" id="start-btn">JUGAR</button>
+                <div class="controls">
+                    <p>PC: Usa las flechas ← →</p>
+                    <p>Móvil: Desliza el dedo</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Game Over Menu -->
+        <div class="menu-overlay hidden" id="game-over-menu">
+            <div class="menu-content">
+                <h2 class="menu-title">GAME OVER</h2>
+                <p class="menu-text" id="final-score">Puntuación final: 0</p>
+                <button class="btn" id="restart-btn">REINTENTAR</button>
+            </div>
+        </div>
+        
+        <!-- Ganador menu -->
+        <div class="menu-overlay hidden" id="win-menu">
+            <div class="menu-content">
+                <h2 class="menu-title">¡GANASTE!</h2>
+                <p class="menu-text" id="win-score">Puntuación final: 0</p>
+                <button class="btn" id="play-again-btn">JUGAR DE NUEVO</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="Js/script.js"></script>
+</body>
+</html>
