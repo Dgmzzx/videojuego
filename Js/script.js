@@ -42,12 +42,22 @@ let canvasWidth = 800
 let canvasHeight = 600
 
 function resizeCanvas() {
-  const container = document.querySelector(".game-container")
-  const maxWidth = Math.min(window.innerWidth - 40, 800)
-  const maxHeight = Math.min(window.innerHeight - 250, 600)
+  const isMobile = window.innerWidth <= 768
+
+  let maxWidth, maxHeight
+
+  if (isMobile) {
+    // On mobile, use almost full width and more height
+    maxWidth = Math.min(window.innerWidth - 20, 500)
+    maxHeight = Math.min(window.innerHeight - 180, 700)
+  } else {
+    // On desktop, keep reasonable size
+    maxWidth = Math.min(window.innerWidth - 40, 800)
+    maxHeight = Math.min(window.innerHeight - 250, 600)
+  }
 
   // Maintain aspect ratio
-  const aspectRatio = 4 / 3
+  const aspectRatio = isMobile ? 3 / 4 : 4 / 3 // Taller aspect ratio for mobile
 
   if (maxWidth / maxHeight > aspectRatio) {
     canvasHeight = maxHeight
@@ -60,7 +70,7 @@ function resizeCanvas() {
   canvas.width = canvasWidth
   canvas.height = canvasHeight
 
-  const availableWidth = canvasWidth * 0.9 // Use 90% of canvas width
+  const availableWidth = canvasWidth * 0.9
   brickWidth = (availableWidth - (brickColumnCount - 1) * brickPadding) / brickColumnCount
 
   // Recalculate game elements based on new canvas size
