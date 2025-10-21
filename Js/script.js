@@ -6,10 +6,10 @@ let gameState = "menu" // menu, playing, gameOver, win
 let score = 0
 let lives = 3
 
-// Paleta (personaje principal)
+// Paleta (personaje principal) - Más ancha como blockbreaker.io
 const paddle = {
-  width: 100,
-  height: 15,
+  width: 120, // Paleta más ancha
+  height: 18, // Un poco más alta
   x: 0,
   y: 0,
   speed: 8,
@@ -25,13 +25,13 @@ const ball = {
   dy: -4,
 }
 
-// Bloques
-const brickRowCount = 5
-const brickColumnCount = 7
-const brickHeight = 30
-const brickPadding = 10
-const brickOffsetTop = 60
-let brickWidth = 90 // Se recalculará según el ancho del canvas
+// Bloques - Tamaño similar a blockbreaker.io
+let brickRowCount = 5
+let brickColumnCount = 7
+let brickWidth = 90 // Bloques más grandes como en blockbreaker.io
+let brickHeight = 35 // Más altos para mejor visibilidad
+const brickPadding = 12 // Más espacio entre bloques
+const brickOffsetTop = 70 // Bajado para dar más espacio arriba
 let bricks = []
 
 // Colores
@@ -44,36 +44,40 @@ let canvasHeight = 600
 function resizeCanvas() {
   const isMobile = window.innerWidth <= 768
 
-  let maxWidth, maxHeight
+  // Ajustar tamaño según dispositivo (similar a blockbreaker.io)
+  if (isMobile) {
+    brickColumnCount = 6 // 6 columnas en móvil
+    brickWidth = 50 // Bloques visibles y grandes
+    brickHeight = 28
+  } else {
+    brickColumnCount = 7 // 7 columnas en escritorio
+    brickWidth = 90 // Bloques grandes como blockbreaker.io
+    brickHeight = 35
+  }
+
+  // Calcular el ancho necesario para los bloques
+  const sideMargin = isMobile ? 10 : 40
+  const totalBricksWidth = brickColumnCount * brickWidth + (brickColumnCount - 1) * brickPadding
+  const minCanvasWidth = totalBricksWidth + (sideMargin * 2)
+  
+  let canvasWidthTarget, canvasHeightTarget
 
   if (isMobile) {
-    // En móvil, usar casi todo el ancho y más altura
-    maxWidth = Math.min(window.innerWidth - 30, 500)
-    maxHeight = Math.min(window.innerHeight - 200, 700)
+    // En móvil, usar el ancho disponible
+    canvasWidthTarget = Math.min(window.innerWidth - 20, 400)
+    canvasHeightTarget = Math.min(window.innerHeight - 180, 600)
   } else {
-    // En escritorio, mantener tamaño razonable
-    maxWidth = Math.min(window.innerWidth - 60, 800)
-    maxHeight = Math.min(window.innerHeight - 250, 600)
+    // En escritorio, tamaño generoso como blockbreaker.io
+    canvasWidthTarget = Math.min(window.innerWidth - 100, 800)
+    canvasHeightTarget = Math.min(window.innerHeight - 200, 650)
   }
 
-  // Mantener proporción de aspecto
-  const aspectRatio = isMobile ? 3 / 4 : 4 / 3 // Proporción más alta para móvil
-
-  if (maxWidth / maxHeight > aspectRatio) {
-    canvasHeight = maxHeight
-    canvasWidth = maxHeight * aspectRatio
-  } else {
-    canvasWidth = maxWidth
-    canvasHeight = maxWidth / aspectRatio
-  }
+  // Asegurar que el canvas es lo suficientemente ancho para los bloques
+  canvasWidth = Math.max(canvasWidthTarget, minCanvasWidth)
+  canvasHeight = canvasHeightTarget
 
   canvas.width = canvasWidth
   canvas.height = canvasHeight
-
-  // Calcular ancho de bloques con espaciado lateral apropiado (10% de márgenes totales)
-  const sideMargin = canvasWidth * 0.05
-  const availableWidth = canvasWidth - (sideMargin * 2)
-  brickWidth = (availableWidth - (brickColumnCount - 1) * brickPadding) / brickColumnCount
 
   // Recalcular elementos del juego basados en el nuevo tamaño del canvas
   if (gameState === "playing") {
@@ -85,7 +89,7 @@ function updateGameDimensions() {
   // Actualizar posición de la paleta proporcionalmente
   const paddleRatio = paddle.x / (canvas.width || canvasWidth)
   paddle.x = canvasWidth * paddleRatio
-  paddle.y = canvasHeight - paddle.height - 20
+  paddle.y = canvasHeight - paddle.height - 35 // Mantener más separación del borde
 
   // Actualizar posición de la pelota proporcionalmente
   const ballXRatio = ball.x / (canvas.width || canvasWidth)
@@ -93,36 +97,35 @@ function updateGameDimensions() {
   ball.x = canvasWidth * ballXRatio
   ball.y = canvasHeight * ballYRatio
 
-  // Calcular posiciones de bloques centradas con márgenes
-  const sideMargin = canvasWidth * 0.05
-  const newBrickOffsetLeft = sideMargin
+  // Calcular posiciones de bloques centradas (tamaños fijos)
+  const totalBricksWidth = brickColumnCount * brickWidth + (brickColumnCount - 1) * brickPadding
+  const newBrickOffsetLeft = (canvasWidth - totalBricksWidth) / 2
 
   bricks.forEach((brick, index) => {
     const row = Math.floor(index / brickColumnCount)
     const col = index % brickColumnCount
     brick.x = newBrickOffsetLeft + col * (brickWidth + brickPadding)
     brick.y = brickOffsetTop + row * (brickHeight + brickPadding)
-    brick.width = brickWidth // Actualizar ancho del bloque
   })
 }
 
 // Inicializar juego
 function initGame() {
-  // Reiniciar posición de la paleta
+  // Reiniciar posición de la paleta (más abajo)
   paddle.x = canvasWidth / 2 - paddle.width / 2
-  paddle.y = canvasHeight - paddle.height - 20
+  paddle.y = canvasHeight - paddle.height - 35 // Más separación del borde inferior
   paddle.dx = 0
 
-  // Reiniciar pelota
+  // Reiniciar pelota (más abajo también)
   ball.x = canvasWidth / 2
-  ball.y = canvasHeight - 50
+  ball.y = canvasHeight - 80 // Más espacio desde el fondo
   ball.dx = 4
   ball.dy = -4
 
   bricks = []
-  // Calcular posiciones de bloques con márgenes (5% en cada lado)
-  const sideMargin = canvasWidth * 0.05
-  const brickOffsetLeft = sideMargin
+  // Calcular posiciones de bloques centrados (tamaños fijos)
+  const totalBricksWidth = brickColumnCount * brickWidth + (brickColumnCount - 1) * brickPadding
+  const brickOffsetLeft = (canvasWidth - totalBricksWidth) / 2
 
   for (let row = 0; row < brickRowCount; row++) {
     for (let col = 0; col < brickColumnCount; col++) {
@@ -138,10 +141,31 @@ function initGame() {
   }
 }
 
-// Dibujar paleta
+// Función auxiliar para dibujar rectángulos redondeados
+function roundRect(ctx, x, y, width, height, radius) {
+  ctx.beginPath()
+  ctx.moveTo(x + radius, y)
+  ctx.lineTo(x + width - radius, y)
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius)
+  ctx.lineTo(x + width, y + height - radius)
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height)
+  ctx.lineTo(x + radius, y + height)
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius)
+  ctx.lineTo(x, y + radius)
+  ctx.quadraticCurveTo(x, y, x + radius, y)
+  ctx.closePath()
+}
+
+// Dibujar paleta con bordes redondeados
 function drawPaddle() {
   ctx.fillStyle = "#00d4ff"
-  ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height)
+  roundRect(ctx, paddle.x, paddle.y, paddle.width, paddle.height, 8)
+  ctx.fill()
+  
+  // Agregar brillo a la paleta
+  ctx.fillStyle = "rgba(255, 255, 255, 0.4)"
+  roundRect(ctx, paddle.x + 5, paddle.y + 3, paddle.width - 10, paddle.height / 2, 5)
+  ctx.fill()
 }
 
 // Dibujar pelota
@@ -153,16 +177,19 @@ function drawBall() {
   ctx.closePath()
 }
 
-// Dibujar bloques
+// Dibujar bloques con bordes redondeados (estilo blockbreaker.io)
 function drawBricks() {
   bricks.forEach((brick) => {
     if (brick.visible) {
+      // Dibujar bloque con bordes redondeados
       ctx.fillStyle = brick.color
-      ctx.fillRect(brick.x, brick.y, brick.width, brick.height)
+      roundRect(ctx, brick.x, brick.y, brick.width, brick.height, 5)
+      ctx.fill()
 
-      // Agregar brillo
-      ctx.fillStyle = "rgba(255, 255, 255, 0.2)"
-      ctx.fillRect(brick.x + 2, brick.y + 2, brick.width - 4, brick.height / 3)
+      // Agregar brillo más sutil
+      ctx.fillStyle = "rgba(255, 255, 255, 0.3)"
+      roundRect(ctx, brick.x + 3, brick.y + 3, brick.width - 6, brick.height / 2.5, 3)
+      ctx.fill()
     }
   })
 }
@@ -212,9 +239,9 @@ function moveBall() {
       gameState = "gameOver"
       showGameOver()
     } else {
-      // Reiniciar pelota
+      // Reiniciar pelota con más espacio
       ball.x = canvasWidth / 2
-      ball.y = canvasHeight - 50
+      ball.y = canvasHeight - 80
       ball.dx = 4
       ball.dy = -4
     }
