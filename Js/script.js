@@ -1,12 +1,12 @@
 const canvas = document.getElementById("gameCanvas")
 const ctx = canvas.getContext("2d")
 
-// Game state
+// Estado del juego
 let gameState = "menu" // menu, playing, gameOver, win
 let score = 0
 let lives = 3
 
-// Paddle (main character)
+// Paleta (personaje principal)
 const paddle = {
   width: 100,
   height: 15,
@@ -16,7 +16,7 @@ const paddle = {
   dx: 0,
 }
 
-// Ball
+// Pelota
 const ball = {
   x: 0,
   y: 0,
@@ -25,19 +25,19 @@ const ball = {
   dy: -4,
 }
 
-// Bricks
+// Bloques
 const brickRowCount = 5
 const brickColumnCount = 7
 const brickHeight = 30
 const brickPadding = 10
 const brickOffsetTop = 60
-let brickWidth = 90 // Will be recalculated based on canvas width
+let brickWidth = 90 // Se recalculará según el ancho del canvas
 let bricks = []
 
-// Colors
+// Colores
 const colors = ["#00d4ff", "#ff006e", "#8338ec", "#ffbe0b", "#06ffa5"]
 
-// Dynamic canvas dimensions
+// Dimensiones dinámicas del canvas
 let canvasWidth = 800
 let canvasHeight = 600
 
@@ -47,17 +47,17 @@ function resizeCanvas() {
   let maxWidth, maxHeight
 
   if (isMobile) {
-    // On mobile, use almost full width and more height
-    maxWidth = Math.min(window.innerWidth - 20, 500)
-    maxHeight = Math.min(window.innerHeight - 180, 700)
+    // En móvil, usar casi todo el ancho y más altura
+    maxWidth = Math.min(window.innerWidth - 30, 500)
+    maxHeight = Math.min(window.innerHeight - 200, 700)
   } else {
-    // On desktop, keep reasonable size
-    maxWidth = Math.min(window.innerWidth - 40, 800)
+    // En escritorio, mantener tamaño razonable
+    maxWidth = Math.min(window.innerWidth - 60, 800)
     maxHeight = Math.min(window.innerHeight - 250, 600)
   }
 
-  // Maintain aspect ratio
-  const aspectRatio = isMobile ? 3 / 4 : 4 / 3 // Taller aspect ratio for mobile
+  // Mantener proporción de aspecto
+  const aspectRatio = isMobile ? 3 / 4 : 4 / 3 // Proporción más alta para móvil
 
   if (maxWidth / maxHeight > aspectRatio) {
     canvasHeight = maxHeight
@@ -70,55 +70,59 @@ function resizeCanvas() {
   canvas.width = canvasWidth
   canvas.height = canvasHeight
 
-  const availableWidth = canvasWidth * 0.9
+  // Calcular ancho de bloques con espaciado lateral apropiado (10% de márgenes totales)
+  const sideMargin = canvasWidth * 0.05
+  const availableWidth = canvasWidth - (sideMargin * 2)
   brickWidth = (availableWidth - (brickColumnCount - 1) * brickPadding) / brickColumnCount
 
-  // Recalculate game elements based on new canvas size
+  // Recalcular elementos del juego basados en el nuevo tamaño del canvas
   if (gameState === "playing") {
     updateGameDimensions()
   }
 }
 
 function updateGameDimensions() {
-  // Update paddle position proportionally
+  // Actualizar posición de la paleta proporcionalmente
   const paddleRatio = paddle.x / (canvas.width || canvasWidth)
   paddle.x = canvasWidth * paddleRatio
   paddle.y = canvasHeight - paddle.height - 20
 
-  // Update ball position proportionally
+  // Actualizar posición de la pelota proporcionalmente
   const ballXRatio = ball.x / (canvas.width || canvasWidth)
   const ballYRatio = ball.y / (canvas.height || canvasHeight)
   ball.x = canvasWidth * ballXRatio
   ball.y = canvasHeight * ballYRatio
 
-  const totalBricksWidth = brickColumnCount * brickWidth + (brickColumnCount - 1) * brickPadding
-  const newBrickOffsetLeft = (canvasWidth - totalBricksWidth) / 2
+  // Calcular posiciones de bloques centradas con márgenes
+  const sideMargin = canvasWidth * 0.05
+  const newBrickOffsetLeft = sideMargin
 
   bricks.forEach((brick, index) => {
     const row = Math.floor(index / brickColumnCount)
     const col = index % brickColumnCount
     brick.x = newBrickOffsetLeft + col * (brickWidth + brickPadding)
     brick.y = brickOffsetTop + row * (brickHeight + brickPadding)
-    brick.width = brickWidth // Update brick width
+    brick.width = brickWidth // Actualizar ancho del bloque
   })
 }
 
-// Initialize game
+// Inicializar juego
 function initGame() {
-  // Reset paddle position
+  // Reiniciar posición de la paleta
   paddle.x = canvasWidth / 2 - paddle.width / 2
   paddle.y = canvasHeight - paddle.height - 20
   paddle.dx = 0
 
-  // Reset ball
+  // Reiniciar pelota
   ball.x = canvasWidth / 2
   ball.y = canvasHeight - 50
   ball.dx = 4
   ball.dy = -4
 
   bricks = []
-  const totalBricksWidth = brickColumnCount * brickWidth + (brickColumnCount - 1) * brickPadding
-  const brickOffsetLeft = (canvasWidth - totalBricksWidth) / 2
+  // Calcular posiciones de bloques con márgenes (5% en cada lado)
+  const sideMargin = canvasWidth * 0.05
+  const brickOffsetLeft = sideMargin
 
   for (let row = 0; row < brickRowCount; row++) {
     for (let col = 0; col < brickColumnCount; col++) {
@@ -134,13 +138,13 @@ function initGame() {
   }
 }
 
-// Draw paddle
+// Dibujar paleta
 function drawPaddle() {
   ctx.fillStyle = "#00d4ff"
   ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height)
 }
 
-// Draw ball
+// Dibujar pelota
 function drawBall() {
   ctx.beginPath()
   ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2)
@@ -149,37 +153,37 @@ function drawBall() {
   ctx.closePath()
 }
 
-// Draw bricks
+// Dibujar bloques
 function drawBricks() {
   bricks.forEach((brick) => {
     if (brick.visible) {
       ctx.fillStyle = brick.color
       ctx.fillRect(brick.x, brick.y, brick.width, brick.height)
 
-      // Add highlight
+      // Agregar brillo
       ctx.fillStyle = "rgba(255, 255, 255, 0.2)"
       ctx.fillRect(brick.x + 2, brick.y + 2, brick.width - 4, brick.height / 3)
     }
   })
 }
 
-// Move paddle
+// Mover paleta
 function movePaddle() {
   paddle.x += paddle.dx
 
-  // Wall collision detection for paddle
+  // Detección de colisión con paredes para la paleta
   if (paddle.x < 0) paddle.x = 0
   if (paddle.x + paddle.width > canvasWidth) {
     paddle.x = canvasWidth - paddle.width
   }
 }
 
-// Move ball
+// Mover pelota
 function moveBall() {
   ball.x += ball.dx
   ball.y += ball.dy
 
-  // Wall collision detection
+  // Detección de colisión con paredes
   if (ball.x + ball.radius > canvasWidth || ball.x - ball.radius < 0) {
     ball.dx *= -1
   }
@@ -188,9 +192,9 @@ function moveBall() {
     ball.dy *= -1
   }
 
-  // Paddle collision detection
+  // Detección de colisión con la paleta
   if (ball.y + ball.radius > paddle.y && ball.x > paddle.x && ball.x < paddle.x + paddle.width && ball.dy > 0) {
-    // Calculate angle based on where ball hits paddle
+    // Calcular ángulo basado en dónde golpea la pelota a la paleta
     const hitPos = (ball.x - paddle.x) / paddle.width
     const angle = ((hitPos - 0.5) * Math.PI) / 3
     const speed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy)
@@ -199,7 +203,7 @@ function moveBall() {
     ball.dy = -speed * Math.cos(angle)
   }
 
-  // Bottom collision - lose life
+  // Colisión inferior - perder vida
   if (ball.y + ball.radius > canvasHeight) {
     lives--
     updateDisplay()
@@ -208,7 +212,7 @@ function moveBall() {
       gameState = "gameOver"
       showGameOver()
     } else {
-      // Reset ball
+      // Reiniciar pelota
       ball.x = canvasWidth / 2
       ball.y = canvasHeight - 50
       ball.dx = 4
@@ -217,7 +221,7 @@ function moveBall() {
   }
 }
 
-// Brick collision detection
+// Detección de colisión con bloques
 function detectBrickCollision() {
   bricks.forEach((brick) => {
     if (brick.visible) {
@@ -236,7 +240,7 @@ function detectBrickCollision() {
   })
 }
 
-// Check win condition
+// Verificar condición de victoria
 function checkWin() {
   const allBricksDestroyed = bricks.every((brick) => !brick.visible)
   if (allBricksDestroyed) {
@@ -245,13 +249,13 @@ function checkWin() {
   }
 }
 
-// Update display
+// Actualizar pantalla
 function updateDisplay() {
   document.getElementById("score-display").textContent = score
   document.getElementById("lives-display").textContent = lives
 }
 
-// Show/hide menus
+// Mostrar/ocultar menús
 function showMenu(menuId) {
   document.querySelectorAll(".menu-overlay").forEach((menu) => {
     menu.classList.add("hidden")
@@ -275,7 +279,7 @@ function showWin() {
   showMenu("win-menu")
 }
 
-// Game loop
+// Bucle del juego
 function gameLoop() {
   if (gameState !== "playing") return
 
@@ -293,7 +297,7 @@ function gameLoop() {
   requestAnimationFrame(gameLoop)
 }
 
-// Start game
+// Iniciar juego
 function startGame() {
   score = 0
   lives = 3
@@ -304,12 +308,12 @@ function startGame() {
   gameLoop()
 }
 
-// Event listeners
+// Listeners de eventos
 document.getElementById("start-btn").addEventListener("click", startGame)
 document.getElementById("restart-btn").addEventListener("click", startGame)
 document.getElementById("play-again-btn").addEventListener("click", startGame)
 
-// Keyboard controls
+// Controles de teclado
 document.addEventListener("keydown", (e) => {
   if (gameState !== "playing") return
 
@@ -326,7 +330,7 @@ document.addEventListener("keyup", (e) => {
   }
 })
 
-// Touch controls for mobile
+// Controles táctiles para móvil
 let touchStartX = 0
 let isTouching = false
 
@@ -345,7 +349,7 @@ canvas.addEventListener("touchmove", (e) => {
   const rect = canvas.getBoundingClientRect()
   const touchX = e.touches[0].clientX - rect.left
 
-  // Direct positioning based on touch
+  // Posicionamiento directo basado en el toque
   paddle.x = touchX - paddle.width / 2
 
   if (paddle.x < 0) paddle.x = 0
@@ -359,10 +363,10 @@ canvas.addEventListener("touchend", () => {
   paddle.dx = 0
 })
 
-// Initialize display
+// Inicializar pantalla
 updateDisplay()
 resizeCanvas()
 
-// Call resize on load and window resize
+// Llamar al resize al cargar y al redimensionar ventana
 window.addEventListener("resize", resizeCanvas)
 window.addEventListener("load", resizeCanvas)
