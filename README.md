@@ -1,1 +1,1 @@
-prototipo simple del videojuego.
+prototipo Alpha del videojuego.
