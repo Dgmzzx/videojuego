@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neon Breaker - Alpha</title>
+    <title>Neon Breaker - Alfa</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -11,6 +11,10 @@
         <div class="header">
             <h1 class="title">NEON BREAKER</h1>
             <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-label">NIVEL</span>
+                    <span class="stat-value" id="level-display">1</span>
+                </div>
                 <div class="stat-item">
                     <span class="stat-label">PUNTOS</span>
                     <span class="stat-value" id="score-display">0</span>
@@ -63,10 +67,12 @@
         <!-- Menú de victoria -->
         <div class="menu-overlay hidden" id="win-menu">
             <div class="menu-content">
-                <h2 class="menu-title win">¡VICTORIA!</h2>
-                <p class="menu-subtitle" id="win-score">Has roto todos los bloques</p>
+                <h2 class="menu-title win">NIVEL COMPLETADO!</h2>
+                <p class="menu-subtitle" id="win-message">¡Has completado el nivel <span id="completed-level">1</span>!</p>
+                <p class="menu-subtitle" id="win-score">Puntuación: 0</p>
                 <div class="menu-buttons">
-                    <button class="btn-menu" id="play-again-btn">JUGAR DE NUEVO</button>
+                    <button class="btn-menu" id="play-again-btn">CONTINUAR</button>
+                    <button class="btn-menu" id="menu-from-win-btn">VOLVER AL MENÚ</button>
                 </div>
             </div>
         </div>
@@ -78,6 +84,7 @@
                 <p class="menu-subtitle" id="final-score">Puntuación final: 0</p>
                 <div class="menu-buttons">
                     <button class="btn-menu" id="restart-btn">REINTENTAR</button>
+                    <button class="btn-menu" id="menu-from-gameover-btn">VOLVER AL MENÚ</button>
                 </div>
             </div>
         </div>

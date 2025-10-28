@@ -16,6 +16,7 @@ window.addEventListener("resize", resizeCanvas)
 let gameState = "menu"
 let score = 0
 let lives = 3
+let level = 1
 let ballAttached = true
 
 // Paleta del jugador
@@ -34,8 +35,8 @@ const ball = {
   x: 0,
   y: 0,
   radius: 8,
-  dx: 4,
-  dy: -4,
+  dx: 0,
+  dy: -5,
   color: "#ff00ff",
 }
 
@@ -43,31 +44,39 @@ const ball = {
 let bricks = []
 const brickColors = ["#00f5ff", "#ff00ff", "#00ff88", "#ffaa00", "#ff0080"]
 const brickRowCount = 5
-const brickColumnCount = 8
-const brickWidth = 75
+const brickColumnCount = 7
+const brickWidth = 85
 const brickHeight = 25
-const brickPadding = 8
+const brickPadding = 10
 const brickOffsetTop = 80
 let brickOffsetLeft = 0
 
 // Inicializar juego
 function initGame() {
   paddle.x = canvas.width / 2 - paddle.width / 2
-  paddle.y = canvas.height - 30
+  // Más espacio en móvil, menos en desktop
+  paddle.y = canvas.height - (isMobile() ? 80 : 40)
 
   ball.x = canvas.width / 2
-  ball.y = canvas.height - 50
-  ball.dx = 4
-  ball.dy = -4
+  ball.y = paddle.y - ball.radius - 2
+  ball.dx = 0
+  ball.dy = -5
   ballAttached = true
 
   createBricks()
 }
 
+// Detectar si es móvil
+function isMobile() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+         ('ontouchstart' in window) || 
+         (window.innerWidth <= 768)
+}
+
 // Crear bloques
 function createBricks() {
   bricks = []
-  const cols = Math.min(brickColumnCount, 8)
+  const cols = Math.min(brickColumnCount, Math.floor((canvas.width - 40) / (brickWidth + brickPadding)))
   const totalBricksWidth = cols * brickWidth + (cols - 1) * brickPadding
   brickOffsetLeft = (canvas.width - totalBricksWidth) / 2
 
@@ -88,12 +97,31 @@ function createBricks() {
   }
 }
 
+// Dibujar rectángulo redondeado (forma ovalada/cápsula)
+function drawRoundedRect(x, y, width, height, radius) {
+  ctx.beginPath()
+  ctx.moveTo(x + radius, y)
+  ctx.lineTo(x + width - radius, y)
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius)
+  ctx.lineTo(x + width, y + height - radius)
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height)
+  ctx.lineTo(x + radius, y + height)
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius)
+  ctx.lineTo(x, y + radius)
+  ctx.quadraticCurveTo(x, y, x + radius, y)
+  ctx.closePath()
+  ctx.fill()
+}
+
 // Dibujar paleta
 function drawPaddle() {
   ctx.shadowBlur = 20
   ctx.shadowColor = paddle.color
   ctx.fillStyle = paddle.color
-  ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height)
+  
+  // Dibujar forma ovalada/cápsula
+  drawRoundedRect(paddle.x, paddle.y, paddle.width, paddle.height, paddle.height / 2)
+  
   ctx.shadowBlur = 0
 }
 
@@ -116,12 +144,14 @@ function drawBricks() {
       ctx.shadowBlur = 10
       ctx.shadowColor = brick.color
       ctx.fillStyle = brick.color
-      ctx.fillRect(brick.x, brick.y, brick.width, brick.height)
+      
+      // Dibujar forma ovalada/cápsula
+      drawRoundedRect(brick.x, brick.y, brick.width, brick.height, brick.height / 2)
 
-      ctx.fillStyle = "rgba(255, 255, 255, 0.2)"
-      ctx.fillRect(brick.x + 2, brick.y + 2, brick.width - 4, brick.height / 2)
-
+      // Efecto de brillo
       ctx.shadowBlur = 0
+      ctx.fillStyle = "rgba(255, 255, 255, 0.2)"
+      drawRoundedRect(brick.x + 4, brick.y + 3, brick.width - 8, brick.height / 3, brick.height / 4)
     }
   })
 }
@@ -195,6 +225,7 @@ function detectBrickCollision() {
 
 // Actualizar display
 function updateDisplay() {
+  document.getElementById("level-display").textContent = level
   document.getElementById("score-display").textContent = score
   document.getElementById("lives-display").textContent = lives
 }
@@ -227,9 +258,9 @@ function gameLoop() {
       showGameOver()
     } else {
       ball.x = canvas.width / 2
-      ball.y = canvas.height - 50
-      ball.dx = 4
-      ball.dy = -4
+      ball.y = paddle.y - ball.radius - 2
+      ball.dx = 0
+      ball.dy = -5
       ballAttached = true
     }
   }
@@ -261,7 +292,8 @@ function hideAllMenus() {
 
 // Mostrar victoria
 function showWin() {
-  document.getElementById("win-score").textContent = `¡Has roto todos los bloques!\nPuntuación final: ${score}`
+  document.getElementById("completed-level").textContent = level
+  document.getElementById("win-score").textContent = `Puntuación: ${score}`
   showMenu("win-menu")
 }
 
@@ -277,6 +309,7 @@ function startGame() {
   gameState = "playing"
   score = 0
   lives = 3
+  level = 1
   initGame()
   updateDisplay()
   gameLoop()
@@ -286,6 +319,9 @@ function startGame() {
 function launchBall() {
   if (ballAttached) {
     ballAttached = false
+    // Lanzar la bola recta hacia arriba
+    ball.dx = 0
+    ball.dy = -5
   }
 }
 
@@ -293,6 +329,12 @@ function launchBall() {
 document.getElementById("start-btn").addEventListener("click", startGame)
 document.getElementById("restart-btn").addEventListener("click", startGame)
 document.getElementById("play-again-btn").addEventListener("click", startGame)
+document.getElementById("menu-from-win-btn").addEventListener("click", () => {
+  showMenu("start-menu")
+})
+document.getElementById("menu-from-gameover-btn").addEventListener("click", () => {
+  showMenu("start-menu")
+})
 document.getElementById("settings-btn").addEventListener("click", () => {
   showMenu("settings-menu")
 })
