@@ -208,6 +208,7 @@ body {
   font-weight: 600;
   text-shadow: 0 0 10px rgba(0, 245, 255, 0.6);
   letter-spacing: 0.05em;
+  margin-top: 25px;
 }
 
 .menu-buttons {
