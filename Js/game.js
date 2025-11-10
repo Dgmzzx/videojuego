@@ -1090,3 +1090,5 @@ document.addEventListener("DOMContentLoaded", () => {
   setupTouchControls()
   setupSettings()
 })
+
+
