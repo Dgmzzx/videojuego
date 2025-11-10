@@ -7,6 +7,9 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <!-- Botón de mute -->
+    <div class="sound-toggle" id="sound-toggle">🔊</div>
+
     <div class="game-container">
         <div class="header">
             <h1 class="title">NEON BREAKER</h1>
@@ -23,10 +26,19 @@
                     <span class="stat-label">VIDAS</span>
                     <span class="stat-value" id="lives-display">3</span>
                 </div>
+                <div class="stat-item">
+                    <span class="stat-label">COMBO</span>
+                    <span class="stat-value" id="combo-display">1x</span>
+                </div>
             </div>
         </div>
         
         <canvas id="gameCanvas"></canvas>
+        
+        <!-- Overlay de pausa -->
+        <div class="pause-overlay hidden" id="pause-overlay">
+            <div class="pause-text">PAUSA</div>
+        </div>
         
         <!-- Menú inicial -->
         <div class="menu-overlay" id="start-menu">
@@ -36,11 +48,12 @@
                 <div class="menu-buttons">
                     <button class="btn-menu" id="start-btn">JUGAR</button>
                     <button class="btn-menu" id="settings-btn">CONFIGURACIÓN</button>
-                    <button class="btn-menu" id="credits-btn">CRÉDITOS</button>
                 </div>
+                <p class="developer-credit">Desarrollador: Dionis Gomez</p>
                 <div class="controls-info">
                     <p>PC: Flechas ⬅ ➡ para mover</p>
                     <p>Lanzar bola: Flecha ⬆ / Espacio</p>
+                    <p>Pausa: Tecla P / Escape</p>
                     <p>Móvil: Desliza para mover / Toca arriba para lanzar</p>
                 </div>
             </div>
@@ -50,18 +63,22 @@
         <div class="menu-overlay hidden" id="settings-menu">
             <div class="menu-content">
                 <h2 class="menu-title">CONFIGURACIÓN</h2>
-                <p class="menu-subtitle">No hay configuraciones disponibles en esta versión alfa</p>
                 <div class="menu-buttons">
+                    <div class="setting-item">
+                        <label for="difficulty-select">Dificultad:</label>
+                        <select id="difficulty-select" class="btn-menu">
+                            <option value="easy">Fácil</option>
+                            <option value="normal" selected>Normal</option>
+                            <option value="hard">Difícil</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <label for="ball-speed-slider">Velocidad de la bola:</label>
+                        <input type="range" id="ball-speed-slider" min="3" max="8" value="5" class="slider">
+                    </div>
                     <button class="btn-menu" id="back-from-settings-btn">VOLVER</button>
                 </div>
             </div>
-        </div>
-        
-        <!-- Menú de créditos -->
-        <div class="credits-modal hidden" id="credits-modal">
-            <h3 class="credits-title">CRÉDITOS</h3>
-            <p class="credits-text">Neon Breaker fue creado como un proyecto inspirado en los juegos clásicos de mi infancia en Blackberry.</p>
-            <button class="btn-close" id="close-credits-btn">CERRAR</button>
         </div>
         
         <!-- Menú de victoria -->
@@ -70,8 +87,9 @@
                 <h2 class="menu-title win">NIVEL COMPLETADO!</h2>
                 <p class="menu-subtitle" id="win-message">¡Has completado el nivel <span id="completed-level">1</span>!</p>
                 <p class="menu-subtitle" id="win-score">Puntuación: 0</p>
+                <p class="menu-subtitle" id="combo-bonus">Bonus por combo: 0</p>
                 <div class="menu-buttons">
-                    <button class="btn-menu" id="play-again-btn">CONTINUAR</button>
+                    <button class="btn-menu" id="next-level-btn">SIGUIENTE NIVEL</button>
                     <button class="btn-menu" id="menu-from-win-btn">VOLVER AL MENÚ</button>
                 </div>
             </div>

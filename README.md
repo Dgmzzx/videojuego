@@ -1,1 +1,1 @@
-prototipo Alfa del videojuego.
+Version avanzada del juego
