@@ -2,8 +2,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const canvas = document.getElementById("gameCanvas")
   const ctx = canvas.getContext("2d")
 
-  // Inicializar AudioContext inmediatamente
+  // Variables para el sistema de audio
   let audioContext = null
+  let audioInteractionRequired = true;
+  let audioActivated = false;
+
+  // Inicializar AudioContext inmediatamente
   initAudioContext();
 
   // Ajustar tamaño del canvas
@@ -76,12 +80,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (audioContext.state === 'suspended') {
           audioContext.resume().then(() => {
             console.log("AudioContext reanudado automáticamente");
-            // Probar sonidos después de reanudar
-            setTimeout(testSounds, 100);
           });
-        } else {
-          // Probar sonidos inmediatamente
-          setTimeout(testSounds, 100);
         }
       } catch (e) {
         console.log("No se pudo crear el AudioContext:", e)
@@ -95,15 +94,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (bgMusic) {
       bgMusic.volume = settings.musicVolume;
       bgMusic.muted = settings.muteAll;
-      
-      // Intentar reproducir automáticamente
-      const playPromise = bgMusic.play();
-      
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          console.log("Reproducción automática bloqueada, esperando interacción del usuario");
-        });
-      }
     }
   }
 
@@ -126,15 +116,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (bgMusic) {
       bgMusic.pause();
       bgMusic.currentTime = 0;
-    }
-  }
-
-  // Función para probar que los sonidos funcionan
-  function testSounds() {
-    if (soundEnabled && audioContext && !settings.muteAll) {
-      console.log("Probando sistema de sonido...");
-      // Reproducir un sonido de prueba muy suave
-      playSound("test", 800, 0.05, "sine");
     }
   }
   
@@ -253,6 +234,73 @@ document.addEventListener("DOMContentLoaded", () => {
     combo: () => playSound("combo", 1120, 0.1, "triangle"),
     win: () => playWinSound(),
     gameOver: () => playGameOverSound(),
+  }
+
+  // ========================================
+  // SISTEMA DE ACTIVACIÓN DE AUDIO
+  // ========================================
+
+  // Función para activar el audio
+  function activateAudio() {
+    if (audioActivated) return;
+    
+    audioActivated = true;
+    initAudioContext();
+    
+    // Ocultar mensaje
+    const audioMessage = document.getElementById('audio-interaction-message');
+    if (audioMessage) {
+      audioMessage.classList.add('hidden');
+    }
+    
+    // Intentar reproducir música
+    if (gameState === "menu" && bgMusic && !settings.muteAll) {
+      playBackgroundMusic();
+    }
+    
+    // Reproducir sonido de confirmación
+    setTimeout(() => {
+      if (soundEnabled && !settings.muteAll) {
+        sounds.buttonClick();
+      }
+    }, 300);
+    
+    console.log("Audio activado por interacción del usuario");
+  }
+
+  // Mostrar mensaje de audio si es necesario
+  function checkAudioStatus() {
+    // Verificar si el audio está bloqueado (esto es una aproximación)
+    if (audioContext && audioContext.state === 'running') {
+      audioInteractionRequired = false;
+      const audioMessage = document.getElementById('audio-interaction-message');
+      if (audioMessage) {
+        audioMessage.classList.add('hidden');
+      }
+    } else {
+      // Mostrar mensaje después de un breve retraso si el audio no se activó
+      setTimeout(() => {
+        if (!audioActivated && audioInteractionRequired) {
+          const audioMessage = document.getElementById('audio-interaction-message');
+          if (audioMessage) {
+            audioMessage.classList.remove('hidden');
+          }
+        }
+      }, 1000);
+    }
+  }
+
+  // Event listeners globales para activar audio
+  function setupAudioActivation() {
+    const activationEvents = ['click', 'touchstart', 'keydown', 'mousedown'];
+    
+    activationEvents.forEach(eventType => {
+      document.addEventListener(eventType, () => {
+        if (!audioActivated) {
+          activateAudio();
+        }
+      }, { once: false });
+    });
   }
 
   // ========================================
@@ -1455,7 +1503,7 @@ document.addEventListener("DOMContentLoaded", () => {
   })
 
   // ========================================
-  // INICIALIZACIÓN FINAL
+  // INICIALIZACIÓN FINAL CON SISTEMA DE AUDIO
   // ========================================
   
   setupKeyboardControls()
@@ -1467,34 +1515,29 @@ document.addEventListener("DOMContentLoaded", () => {
   loadSettings();
   initBackgroundMusic();
   
-  // Intentar reproducir música después de una breve pausa
+  // Configurar sistema de activación de audio
+  setupAudioActivation();
+  
+  // Verificar estado del audio después de un breve retraso
   setTimeout(() => {
+    checkAudioStatus();
+    
+    // Intentar reproducir música automáticamente si es posible
     if (bgMusic && gameState === "menu" && !settings.muteAll) {
-      bgMusic.play().catch(e => {
-        console.log("Esperando interacción del usuario para reproducir música");
+      bgMusic.play().then(() => {
+        // Si la música se reproduce automáticamente, ocultar mensaje
+        audioInteractionRequired = false;
+        audioActivated = true;
+        const audioMessage = document.getElementById('audio-interaction-message');
+        if (audioMessage) {
+          audioMessage.classList.add('hidden');
+        }
+        console.log("Música reproducida automáticamente");
+      }).catch(e => {
+        // Si falla, mostrar mensaje de interacción
+        console.log("Se requiere interacción del usuario para el audio");
+        audioInteractionRequired = true;
       });
     }
   }, 500);
-
-  // Event listeners globales para activar audio
-  document.addEventListener("click", () => {
-    initAudioContext();
-    if (gameState === "menu" && bgMusic && bgMusic.paused && !settings.muteAll) {
-      playBackgroundMusic();
-    }
-  });
-
-  document.addEventListener("keydown", () => {
-    initAudioContext();
-    if (gameState === "menu" && bgMusic && bgMusic.paused && !settings.muteAll) {
-      playBackgroundMusic();
-    }
-  });
-
-  document.addEventListener("touchstart", () => {
-    initAudioContext();
-    if (gameState === "menu" && bgMusic && bgMusic.paused && !settings.muteAll) {
-      playBackgroundMusic();
-    }
-  });
 })
