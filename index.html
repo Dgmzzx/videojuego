@@ -13,7 +13,7 @@
     <div class="game-container">
         <div class="header">
             <h1 class="title">NEON BREAKER</h1>
-            <div class="stats">
+        <div class="stats">
                 <div class="stat-item">
                     <span class="stat-label">NIVEL</span>
                     <span class="stat-value" id="level-display">1</span>
@@ -31,6 +31,11 @@
                     <span class="stat-value" id="combo-display">1x</span>
                 </div>
             </div>
+            <audio id="bg-music" loop autoplay>
+                <source src="music/soundUI.mp3" type="audio/mpeg">
+                <source src="music/soundUI.ogg" type="audio/ogg">
+                Tu navegador no soporta el elemento de audio.
+            </audio>
         </div>
         
         <canvas id="gameCanvas"></canvas>
@@ -59,24 +64,122 @@
             </div>
         </div>
         
-        <!-- Menú de configuración -->
+        <!-- Menú de configuración con pestañas -->
         <div class="menu-overlay hidden" id="settings-menu">
-            <div class="menu-content">
+            <div class="menu-content settings-content-tabs">
                 <h2 class="menu-title">CONFIGURACIÓN</h2>
+                
+                <!-- Pestañas de navegación -->
+                <div class="tabs-navigation">
+                    <button class="tab-btn active" data-tab="audio">Audio</button>
+                    <button class="tab-btn" data-tab="gameplay">Jugabilidad</button>
+                    <button class="tab-btn" data-tab="visual">Visual</button>
+                    <button class="tab-btn" data-tab="accessibility">Accesibilidad</button>
+                    <button class="tab-btn" data-tab="data">Datos</button>
+                </div>
+
+                <!-- Contenido de las pestañas -->
+                <div class="tabs-content">
+                    
+                    <!-- Pestaña Audio -->
+                    <div class="tab-panel active" id="tab-audio">
+                        <div class="setting-row">
+                            <label>Efectos de sonido</label>
+                            <div class="slider-container">
+                                <input type="range" id="sfx-volume-slider" min="0" max="100" value="100" class="slider">
+                                <span class="slider-value" id="sfx-volume-value">100%</span>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <label>Música</label>
+                            <div class="slider-container">
+                                <input type="range" id="music-volume-slider" min="0" max="100" value="100" class="slider">
+                                <span class="slider-value" id="music-volume-value">100%</span>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <label>Silenciar todo</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="mute-all-checkbox">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Pestaña Jugabilidad -->
+                    <div class="tab-panel" id="tab-gameplay">
+                        <div class="setting-row">
+                            <label>Dificultad</label>
+                            <select id="difficulty-select" class="select-input">
+                                <option value="easy">Fácil</option>
+                                <option value="normal" selected>Normal</option>
+                                <option value="hard">Difícil</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Pestaña Visual -->
+                    <div class="tab-panel" id="tab-visual">
+                        <div class="setting-row">
+                            <label>Brillo</label>
+                            <div class="slider-container">
+                                <input type="range" id="brightness-slider" min="50" max="150" value="100" class="slider">
+                                <span class="slider-value" id="brightness-value">100%</span>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <label>Mostrar estela</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="trail-checkbox" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-row">
+                            <label>Mostrar partículas</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="particles-checkbox" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Pestaña Accesibilidad -->
+                    <div class="tab-panel" id="tab-accessibility">
+                        <div class="setting-row">
+                            <label>Modo daltónico</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="colorblind-mode-checkbox">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-row">
+                            <label>Reducir animaciones</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="reduce-animations-checkbox">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Pestaña Datos -->
+                    <div class="tab-panel" id="tab-data">
+                        <div class="setting-row data-row">
+                            <label>Nivel actual</label>
+                            <span class="data-value" id="current-level-data">1</span>
+                        </div>
+                        <div class="setting-row data-row">
+                            <label>Récord de puntos</label>
+                            <span class="data-value" id="high-score-data">0</span>
+                        </div>
+                        <div class="setting-row">
+                            <button class="btn-danger" id="reset-highscore-btn">Reiniciar récord</button>
+                        </div>
+                    </div>
+
+                </div>
+
                 <div class="menu-buttons">
-                    <div class="setting-item">
-                        <label for="difficulty-select">Dificultad:</label>
-                        <select id="difficulty-select" class="btn-menu">
-                            <option value="easy">Fácil</option>
-                            <option value="normal" selected>Normal</option>
-                            <option value="hard">Difícil</option>
-                        </select>
-                    </div>
-                    <div class="setting-item">
-                        <label for="ball-speed-slider">Velocidad de la bola:</label>
-                        <input type="range" id="ball-speed-slider" min="3" max="8" value="5" class="slider">
-                    </div>
-                    <button class="btn-menu" id="back-from-settings-btn">VOLVER</button>
+                    <button class="btn-menu" id="back-from-settings-btn">VOLVER AL MENÚ</button>
                 </div>
             </div>
         </div>
