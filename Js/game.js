@@ -427,7 +427,16 @@ document.addEventListener("DOMContentLoaded", () => {
     EXPAND_PADDLE: { color: "#ffaa00", effect: "Paleta grande" },
     SLOW_BALL: { color: "#00f5ff", effect: "Bola lenta" },
     MULTI_BALL: { color: "#ff00ff", effect: "Bolas múltiples" },
+    GUN_POWER: { color: "#ff0000", effect: "Pistola" }, // NUEVO POWER-UP
   }
+
+  // Sistema de balas para el power-up de pistola
+  const bullets = []
+  let gunActive = false
+  let gunActiveUntil = 0
+  const bulletSpeed = 10
+  const bulletWidth = 4
+  const bulletHeight = 10
 
   // Bolas múltiples
   const balls = []
@@ -549,6 +558,9 @@ document.addEventListener("DOMContentLoaded", () => {
     balls.push({ ...ball })
 
     powerUps.length = 0
+    bullets.length = 0
+    gunActive = false
+    gunActiveUntil = 0
 
     combo = 1
     updateComboDisplay()
@@ -581,12 +593,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
+        // Determinar si este bloque debe estar visible según el patrón del nivel
+        const shouldBeVisible = isBrickVisibleInPattern(row, col, cols, rows)
+        
+        if (!shouldBeVisible) continue // Saltar este bloque si no debe estar visible
+        
         const brickX = brickOffsetLeft + col * (brickWidth + brickPadding)
         const brickY = brickOffsetTop + row * (brickHeight + brickPadding)
 
+        // Mantener siempre 1 golpe requerido (como en el nivel 1)
         let hitsRequired = 1
-        if (level > 3 && Math.random() < 0.2) hitsRequired = 2
-        if (level > 5 && Math.random() < 0.1) hitsRequired = 3
 
         bricks.push({
           x: brickX,
@@ -603,23 +619,82 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Nueva función para determinar patrones de bloques por nivel
+  function isBrickVisibleInPattern(row, col, cols, rows) {
+    // Patrón para nivel 1: todos los bloques visibles
+    if (level === 1) {
+      return true;
+    }
+    
+    // Patrón para nivel 2: patrón de tablero de ajedrez
+    if (level === 2) {
+      return (row + col) % 2 === 0;
+    }
+    
+    // Patrón para nivel 3: forma de pirámide
+    if (level === 3) {
+      const middle = Math.floor(cols / 2);
+      const distanceFromMiddle = Math.abs(col - middle);
+      return row >= distanceFromMiddle && row < rows - distanceFromMiddle;
+    }
+    
+    // Patrón para nivel 4: forma de cruz
+    if (level === 4) {
+      const middleRow = Math.floor(rows / 2);
+      const middleCol = Math.floor(cols / 2);
+      return row === middleRow || col === middleCol;
+    }
+    
+    // Patrón para nivel 5: forma de círculo
+    if (level === 5) {
+      const centerRow = (rows - 1) / 2;
+      const centerCol = (cols - 1) / 2;
+      const distance = Math.sqrt(Math.pow(row - centerRow, 2) + Math.pow(col - centerCol, 2));
+      return distance < Math.min(rows, cols) / 2;
+    }
+    
+    // Para niveles más altos, patrones aleatorios
+    if (level > 5) {
+      // Patrones específicos para niveles 6-10
+      const patterns = [
+        () => col % 3 === 0, // Columnas cada 3
+        () => row % 2 === 0, // Filas pares
+        () => (row + col) % 3 === 0, // Diagonal cada 3
+        () => col < row + 1, // Triángulo inferior derecho
+        () => col + row >= cols - 1, // Triángulo superior izquierdo
+      ];
+      
+      const patternIndex = (level - 6) % patterns.length;
+      return patterns[patternIndex]();
+    }
+    
+    // Por defecto, todos visibles
+    return true;
+  }
+
   function animateBricksEntrance() {
     if (settings.reduceAnimations) {
       bricks.forEach(brick => {
-        brick.y = brick.originalY
-        brick.visible = true
-      })
-      return
+        brick.y = brick.originalY;
+        brick.visible = true;
+      });
+      return;
     }
     
+    // Animar solo los bloques que son visibles según el patrón
+    let visibleIndex = 0;
     bricks.forEach((brick, index) => {
-      brick.y = -50
-      brick.visible = true
-
-      setTimeout(() => {
-        animateBrickToPosition(brick, brick.originalY)
-      }, index * 50)
-    })
+      // Iniciar todos los bloques fuera de pantalla
+      brick.y = -50;
+      
+      // Animar solo los que deben ser visibles
+      if (brick.visible) {
+        setTimeout(() => {
+          animateBrickToPosition(brick, brick.originalY);
+        }, visibleIndex * 30); // Animación más rápida
+        visibleIndex++;
+      }
+    });
   }
 
   function animateBrickToPosition(brick, targetY) {
@@ -649,8 +724,8 @@ document.addEventListener("DOMContentLoaded", () => {
       powerUps.push({
         x: x,
         y: y,
-        width: 20,
-        height: 20,
+        width: 30,
+        height: 30,
         type: randomType,
         color: powerUpTypes[randomType].color,
         speed: 2,
@@ -700,9 +775,171 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         createParticles(powerUp.x, powerUp.y, powerUp.color, 20)
         break
+
+      case "GUN_POWER": // NUEVO CASO
+        gunActive = true
+        gunActiveUntil = Date.now() + 80000 // 8 segundos
+        createParticles(powerUp.x, powerUp.y, powerUp.color, 20)
+        
+        // Sonido especial para activar pistola
+        if (soundEnabled && !settings.muteAll) {
+          playSound("powerup", 1200, 0.2, "sawtooth")
+        }
+        break
     }
 
     updateDisplay()
+  }
+
+  // Función para disparar balas
+  function shootBullets() {
+    if (!gunActive || Date.now() > gunActiveUntil) {
+      gunActive = false
+      return
+    }
+
+    // Disparar automáticamente cada 300ms
+    if (Date.now() % 300 < 16) { // Aproximadamente 3 balas por segundo
+      // Crear bala desde el extremo izquierdo de la paleta
+      bullets.push({
+        x: paddle.x + 5,
+        y: paddle.y - 5,
+        width: bulletWidth,
+        height: bulletHeight,
+        color: "#ff0000",
+        speed: bulletSpeed
+      })
+      
+      // Crear bala desde el extremo derecho de la paleta
+      bullets.push({
+        x: paddle.x + paddle.width - 5 - bulletWidth,
+        y: paddle.y - 5,
+        width: bulletWidth,
+        height: bulletHeight,
+        color: "#ff0000",
+        speed: bulletSpeed
+      })
+      
+      // Sonido de disparo
+      if (soundEnabled && !settings.muteAll && Math.random() < 0.3) {
+        playSound("shoot", 800, 0.05, "square")
+      }
+    }
+  }
+
+  // Función para actualizar y dibujar balas
+  function updateBullets() {
+    // Disparar si el power-up está activo
+    shootBullets()
+    
+    // Actualizar posición de las balas
+    for (let i = bullets.length - 1; i >= 0; i--) {
+      const bullet = bullets[i]
+      
+      // Mover bala hacia arriba
+      bullet.y -= bullet.speed
+      
+      // Dibujar bala con efecto de partículas
+      ctx.shadowBlur = 15
+      ctx.shadowColor = bullet.color
+      ctx.fillStyle = bullet.color
+      
+      // Balas con forma de bala (punta redondeada)
+      if (!ctx.roundRect) {
+        // Si no existe roundRect, usar rectángulo normal
+        ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height)
+      } else {
+        ctx.beginPath()
+        ctx.roundRect(bullet.x, bullet.y, bullet.width, bullet.height, [bullet.height/2, bullet.height/2, 2, 2])
+        ctx.fill()
+      }
+      
+      // Efecto de estela
+      if (settings.showParticles && Math.random() < 0.5) {
+        createParticles(bullet.x + bullet.width/2, bullet.y + bullet.height, "#ff5555", 1)
+      }
+      
+      ctx.shadowBlur = 0
+      
+      // Detectar colisión con bloques
+      bricks.forEach((brick) => {
+        if (brick.visible &&
+            bullet.x < brick.x + brick.width &&
+            bullet.x + bullet.width > brick.x &&
+            bullet.y < brick.y + brick.height &&
+            bullet.y + bullet.height > brick.y) {
+          
+          brick.hits++
+          
+          if (brick.hits >= brick.hitsRequired) {
+            brick.visible = false
+            score += 10
+            createPowerUp(brick.x + brick.width / 2, brick.y + brick.height / 2)
+            createParticles(brick.x + brick.width / 2, brick.y + brick.height / 2, brick.color, 8)
+          } else {
+            createParticles(brick.x + brick.width / 2, brick.y + brick.height / 2, brick.color, 3)
+          }
+          
+          // Eliminar la bala
+          bullets.splice(i, 1)
+          createParticles(bullet.x + bullet.width/2, bullet.y + bullet.height/2, "#ff0000", 5)
+          updateDisplay()
+          return
+        }
+      })
+      
+      // Eliminar bala si sale de la pantalla
+      if (bullet.y + bullet.height < 0) {
+        bullets.splice(i, 1)
+      }
+    }
+    
+    // Dibujar indicador visual de pistola activa
+    if (gunActive) {
+      const timeLeft = Math.max(0, gunActiveUntil - Date.now())
+      const alpha = 0.3 + 0.3 * Math.sin(Date.now() / 200)
+      
+      // Resplandor rojo en los extremos de la paleta
+      ctx.globalAlpha = alpha
+      ctx.shadowBlur = 20
+      ctx.shadowColor = "#ff0000"
+      ctx.fillStyle = "#ff0000"
+      
+      // Extremo izquierdo
+      ctx.beginPath()
+      ctx.arc(paddle.x + 5, paddle.y + paddle.height/2, 8, 0, Math.PI * 2)
+      ctx.fill()
+      
+      // Extremo derecho
+      ctx.beginPath()
+      ctx.arc(paddle.x + paddle.width - 5, paddle.y + paddle.height/2, 8, 0, Math.PI * 2)
+      ctx.fill()
+      
+      ctx.globalAlpha = 1
+      ctx.shadowBlur = 0
+    }
+  }
+
+  // Helper function para rectángulos redondeados (si no existe)
+  if (!ctx.roundRect) {
+    ctx.roundRect = function(x, y, width, height, radii) {
+      if (typeof radii === 'number') {
+        radii = [radii, radii, radii, radii]
+      }
+      
+      this.beginPath()
+      this.moveTo(x + radii[0], y)
+      this.lineTo(x + width - radii[1], y)
+      this.quadraticCurveTo(x + width, y, x + width, y + radii[1])
+      this.lineTo(x + width, y + height - radii[2])
+      this.quadraticCurveTo(x + width, y + height, x + width - radii[2], y + height)
+      this.lineTo(x + radii[3], y + height)
+      this.quadraticCurveTo(x, y + height, x, y + height - radii[3])
+      this.lineTo(x, y + radii[0])
+      this.quadraticCurveTo(x, y, x + radii[0], y)
+      this.closePath()
+      return this
+    }
   }
 
   function updatePowerUps() {
@@ -741,66 +978,182 @@ document.addEventListener("DOMContentLoaded", () => {
 
     ctx.fillStyle = p.color
     ctx.strokeStyle = p.color
-    ctx.lineWidth = 2
+    ctx.lineWidth = 3
 
     switch (p.type) {
       case "EXTRA_LIFE":
-        drawHeart(x, y, size)
+        // Corazón más grande y definido
+        drawHeart(x, y, size * 1.2)
         break
       case "EXPAND_PADDLE":
-        ctx.fillRect(x - size, y - size / 2, size * 2, size)
-        ctx.strokeRect(x - size, y - size / 2, size * 2, size)
+        // Paleta con flechas indicando expansión
+        ctx.fillRect(x - size * 1.2, y - size / 3, size * 2.4, size * 0.66)
+        // Flecha izquierda
+        ctx.beginPath()
+        ctx.moveTo(x - size * 1.5, y)
+        ctx.lineTo(x - size * 1.1, y - size * 0.4)
+        ctx.lineTo(x - size * 1.1, y + size * 0.4)
+        ctx.closePath()
+        ctx.fill()
+        // Flecha derecha
+        ctx.beginPath()
+        ctx.moveTo(x + size * 1.5, y)
+        ctx.lineTo(x + size * 1.1, y - size * 0.4)
+        ctx.lineTo(x + size * 1.1, y + size * 0.4)
+        ctx.closePath()
+        ctx.fill()
         break
       case "SLOW_BALL":
-        drawSnowflake(x, y, size)
+        // Copo de nieve más detallado
+        drawSnowflake(x, y, size * 1.1)
         break
       case "MULTI_BALL":
+        // Tres bolas más grandes y mejor distribuidas
         ctx.beginPath()
-        ctx.arc(x - size / 2, y - size / 2, size / 2, 0, Math.PI * 2)
+        ctx.arc(x - size * 0.6, y - size * 0.4, size * 0.5, 0, Math.PI * 2)
         ctx.fill()
         ctx.beginPath()
-        ctx.arc(x + size / 2, y - size / 2, size / 2, 0, Math.PI * 2)
+        ctx.arc(x + size * 0.6, y - size * 0.4, size * 0.5, 0, Math.PI * 2)
         ctx.fill()
         ctx.beginPath()
-        ctx.arc(x, y + size / 2, size / 2, 0, Math.PI * 2)
+        ctx.arc(x, y + size * 0.5, size * 0.5, 0, Math.PI * 2)
         ctx.fill()
+        break
+      case "GUN_POWER":
+        // Pistola más detallada y reconocible
+        drawGunIcon(x, y, size * 1.3)
         break
     }
   }
 
-  function drawHeart(x, y, size) {
+  // Función mejorada para dibujar ícono de pistola
+  function drawGunIcon(x, y, size) {
+    ctx.save()
+    ctx.translate(x, y)
+    
+    // Cañón principal (más grueso)
+    ctx.fillStyle = ctx.strokeStyle
+    ctx.fillRect(-size * 0.6, -size * 0.35, size * 1.2, size * 0.4)
+    
+    // Punta del cañón (más pronunciada)
     ctx.beginPath()
-    ctx.moveTo(x, y + size / 2)
-    ctx.bezierCurveTo(x - size, y - size / 2, x - size, y - size / 2, x - size / 2, y)
-    ctx.bezierCurveTo(x - size, y + size / 2, x, y + size, x, y + size)
-    ctx.bezierCurveTo(x, y + size, x + size, y + size / 2, x + size / 2, y)
-    ctx.bezierCurveTo(x + size, y - size / 2, x + size, y - size / 2, x, y + size / 2)
+    ctx.moveTo(size * 0.6, -size * 0.35)
+    ctx.lineTo(size * 0.9, -size * 0.2)
+    ctx.lineTo(size * 0.9, size * 0.2)
+    ctx.lineTo(size * 0.6, size * 0.05)
+    ctx.closePath()
+    ctx.fill()
+    
+    // Empuñadura (más definida)
+    ctx.beginPath()
+    ctx.moveTo(-size * 0.6, size * 0.05)
+    ctx.lineTo(-size * 0.4, size * 0.05)
+    ctx.lineTo(-size * 0.4, size * 0.6)
+    ctx.lineTo(-size * 0.7, size * 0.6)
+    ctx.lineTo(-size * 0.7, size * 0.3)
+    ctx.lineTo(-size * 0.6, size * 0.3)
+    ctx.closePath()
+    ctx.fill()
+    
+    // Gatillo
+    ctx.beginPath()
+    ctx.arc(-size * 0.5, size * 0.15, size * 0.15, 0, Math.PI * 2)
+    ctx.fill()
+    
+    // Detalles adicionales (líneas en el cañón)
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.moveTo(-size * 0.3, -size * 0.25)
+    ctx.lineTo(-size * 0.3, -size * 0.05)
+    ctx.stroke()
+    ctx.beginPath()
+    ctx.moveTo(0, -size * 0.25)
+    ctx.lineTo(0, -size * 0.05)
+    ctx.stroke()
+    
+    ctx.restore()
+  }
+
+  function drawHeart(x, y, size) {
+    ctx.save()
+    ctx.translate(x, y)
+    
+    ctx.beginPath()
+    ctx.moveTo(0, size * 0.3)
+    
+    // Lado izquierdo
+    ctx.bezierCurveTo(
+      -size * 0.5, -size * 0.3,
+      -size * 1.2, -size * 0.3,
+      -size * 1.2, size * 0.1
+    )
+    ctx.bezierCurveTo(
+      -size * 1.2, size * 0.4,
+      -size * 0.8, size * 0.7,
+      0, size * 1.1
+    )
+    
+    // Lado derecho
+    ctx.bezierCurveTo(
+      size * 0.8, size * 0.7,
+      size * 1.2, size * 0.4,
+      size * 1.2, size * 0.1
+    )
+    ctx.bezierCurveTo(
+      size * 1.2, -size * 0.3,
+      size * 0.5, -size * 0.3,
+      0, size * 0.3
+    )
+    
+    ctx.closePath()
     ctx.fill()
     ctx.stroke()
+    
+    ctx.restore()
   }
 
   function drawSnowflake(x, y, size) {
     ctx.save()
     ctx.translate(x, y)
 
+    // 6 brazos principales
     for (let i = 0; i < 6; i++) {
+      ctx.save()
       ctx.rotate((Math.PI / 3) * i)
+      
+      // Brazo principal
       ctx.beginPath()
       ctx.moveTo(0, 0)
       ctx.lineTo(0, -size)
       ctx.stroke()
 
-      for (let j = 1; j <= 2; j++) {
+      // Ramas del brazo (más pronunciadas)
+      for (let j = 1; j <= 3; j++) {
+        const branchY = (-size / 4) * j
+        const branchSize = size / 4
+        
+        // Rama derecha
         ctx.beginPath()
-        ctx.moveTo(0, (-size / 3) * j)
-        ctx.lineTo(size / 3, (-size / 3) * j + size / 6)
+        ctx.moveTo(0, branchY)
+        ctx.lineTo(branchSize * 0.7, branchY + branchSize * 0.5)
         ctx.stroke()
+        
+        // Rama izquierda
         ctx.beginPath()
-        ctx.moveTo(0, (-size / 3) * j)
-        ctx.lineTo(-size / 3, (-size / 3) * j + size / 6)
+        ctx.moveTo(0, branchY)
+        ctx.lineTo(-branchSize * 0.7, branchY + branchSize * 0.5)
         ctx.stroke()
       }
+      
+      ctx.restore()
     }
+    
+    // Círculo central
+    ctx.beginPath()
+    ctx.arc(0, 0, size * 0.15, 0, Math.PI * 2)
+    ctx.fill()
+    
     ctx.restore()
   }
 
@@ -1126,14 +1479,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function nextLevel() {
-    level++
-    score += 100 * level
-    ballBaseSpeed = Math.min(8, 5 + level * 0.5)
-    initGame()
-    gameState = "playing"
-    hideAllMenus()
-    gameLoop()
-  }
+  level++
+  score += 100 * level
+  // Restablecer vidas a 3 en cada nuevo nivel
+  lives = 3
+  initGame()
+  gameState = "playing"
+  hideAllMenus()
+  gameLoop()
+}
 
   function gameLoop() {
     if (gameState !== "playing" || isPaused) return
@@ -1148,6 +1502,7 @@ document.addEventListener("DOMContentLoaded", () => {
     drawBalls()
     updateParticles()
     updatePowerUps()
+    updateBullets()
 
     movePaddle()
 
@@ -1229,8 +1584,13 @@ document.addEventListener("DOMContentLoaded", () => {
     score = 0
     lives = 3
     level = 1
-    ballBaseSpeed = 5
     isPaused = false
+    
+    // Resetear sistema de balas
+    bullets.length = 0
+    gunActive = false
+    gunActiveUntil = 0
+    
     initGame()
     updateDisplay()
     gameLoop()
@@ -1487,6 +1847,18 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("menu-from-gameover-btn").addEventListener("click", () => {
     playBackgroundMusic(); // Reanudar música al volver al menú
     showMenu("start-menu");
+  });
+  
+  document.getElementById("next-level-btn").addEventListener("click", () => {
+    initAudioContext();
+    sounds.buttonClick();
+    nextLevel();
+  });
+
+  document.getElementById("restart-btn").addEventListener("click", () => {
+    initAudioContext();
+    sounds.buttonClick();
+    startGame();
   });
   
   document.getElementById("sound-toggle").addEventListener("click", toggleSound)
