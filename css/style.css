@@ -122,31 +122,35 @@ body {
   text-align: left;
 }
 
-/* Pestañas de navegación */
+/* Pestañas de navegación - MEJORADO */
 .tabs-navigation {
-  display: flex;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 8px;
   margin: 25px 0;
   padding: 8px;
   background: rgba(0, 0, 0, 0.4);
   border-radius: 15px;
-  overflow-x: auto;
-  flex-wrap: wrap;
 }
 
 .tab-btn {
-  flex: 1;
-  min-width: 100px;
-  padding: 12px 20px;
+  padding: 12px 8px;
   background: transparent;
   border: none;
   color: #888;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
   border-radius: 10px;
   transition: all 0.3s ease;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .tab-btn:hover {
@@ -671,14 +675,15 @@ body {
   }
 
   .tabs-navigation {
+    grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
     gap: 5px;
     padding: 5px;
   }
 
   .tab-btn {
-    min-width: 80px;
-    padding: 10px 12px;
-    font-size: 0.85rem;
+    padding: 10px 5px;
+    font-size: 0.75rem;
+    min-height: 40px;
   }
 
   .tabs-content {
@@ -725,5 +730,16 @@ body {
   
   .audio-message-hint {
     font-size: 0.9rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .tabs-navigation {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .tab-btn {
+    font-size: 0.7rem;
+    padding: 8px 4px;
   }
 }

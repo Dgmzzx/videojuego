@@ -601,8 +601,28 @@ document.addEventListener("DOMContentLoaded", () => {
         const brickX = brickOffsetLeft + col * (brickWidth + brickPadding)
         const brickY = brickOffsetTop + row * (brickHeight + brickPadding)
 
-        // Mantener siempre 1 golpe requerido (como en el nivel 1)
+        // NUEVA LÓGICA: Determinar golpes requeridos según el nivel
         let hitsRequired = 1
+        
+        if (level >= 2) {
+          // A partir del nivel 2, algunos bloques requieren más golpes
+          if (level === 2) {
+            // Nivel 2: 70% bloques de 1 golpe, 30% de 2 golpes
+            hitsRequired = Math.random() < 0.7 ? 1 : 2
+          } else if (level === 3) {
+            // Nivel 3: 50% de 1 golpe, 40% de 2 golpes, 10% de 3 golpes
+            const rand = Math.random()
+            if (rand < 0.5) hitsRequired = 1
+            else if (rand < 0.9) hitsRequired = 2
+            else hitsRequired = 3
+          } else if (level >= 4) {
+            // Nivel 4+: 40% de 1 golpe, 40% de 2 golpes, 20% de 3 golpes
+            const rand = Math.random()
+            if (rand < 0.4) hitsRequired = 1
+            else if (rand < 0.8) hitsRequired = 2
+            else hitsRequired = 3
+          }
+        }
 
         bricks.push({
           x: brickX,
@@ -778,7 +798,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       case "GUN_POWER": // NUEVO CASO
         gunActive = true
-        gunActiveUntil = Date.now() + 80000 // 8 segundos
+        gunActiveUntil = Date.now() + 50000 // 5 segundos
         createParticles(powerUp.x, powerUp.y, powerUp.color, 20)
         
         // Sonido especial para activar pistola
@@ -1296,7 +1316,7 @@ document.addEventListener("DOMContentLoaded", () => {
           ctx.textAlign = "center"
           ctx.textBaseline = "middle"
           ctx.fillText(
-            brick.hitsRequired - brick.hits + "/" + brick.hitsRequired,
+            brick.hitsRequired - brick.hits,
             brick.x + brick.width / 2,
             brick.y + brick.height / 2,
           )
