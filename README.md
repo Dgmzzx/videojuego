@@ -1,1 +1,1 @@
-version beta del juego
+version final del juego
